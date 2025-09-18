@@ -12,7 +12,10 @@ from flask_limiter.util import get_remote_address
 # --- Configurations --- #
 app = Flask(__name__)
 load_dotenv()
-API_KEY : str = os.getenv("API_KEY", "default_unsafe")
+
+# NOTE : use a good API key in .env
+
+API_KEY: str = os.getenv("API_KEY", "default_unsafe")
 
 # setup limiter
 limiter = Limiter(
@@ -31,12 +34,11 @@ SMTP_PORT: int = 465
 def send_email():
     data = request.get_json()
     if API_KEY != data.get("key"):
-        return jsonify({"error" : "Invalid acsses"}), 401
-    try: 
+        return jsonify({"error": "Invalid acsses"}), 401
+    try:
         recipient_email = data.get("recipient")
         subject = data.get("subject")
         body = data.get("body")
-
 
         if not all([recipient_email, subject, body]):
             return jsonify({"error": "Missing recipient, subject, or body"}), 400
