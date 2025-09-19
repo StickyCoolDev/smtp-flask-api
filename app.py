@@ -7,6 +7,7 @@ from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import logfire
 
 
 # --- Configurations --- #
@@ -16,6 +17,12 @@ load_dotenv()
 # NOTE : use a good API key in .env
 
 API_KEY: str = os.getenv("API_KEY", "default_unsafe")
+LOGFIRE_KEY:str = os.getenv("LOGFIRE_KEY", "")
+
+
+logfire.configure(token=LOGFIRE_KEY)
+
+
 
 # setup limiter
 limiter = Limiter(
@@ -34,11 +41,11 @@ SMTP_PORT: int = 465
 def send_email():
     data = request.get_json()
     if API_KEY != data.get("key"):
-        return jsonify({"error": "Invalid acsses"}), 401
+        return jsonify({"error": "Invalid acsses - incorrect api key"}), 401
     try:
-        recipient_email = data.get("recipient")
-        subject = data.get("subject")
-        body = data.get("body")
+        recipient_email : str = data.get("recipient")
+        subject : str = data.get("subject")
+        body : str = data.get("body")
 
         if not all([recipient_email, subject, body]):
             return jsonify({"error": "Missing recipient, subject, or body"}), 400
@@ -48,6 +55,7 @@ def send_email():
         msg["From"] = SENDER_EMAIL
         msg["To"] = recipient_email
         msg["Subject"] = subject
+        
 
         # Attach the body with MIMEText
         msg.attach(MIMEText(body, "plain"))
@@ -61,11 +69,14 @@ def send_email():
             server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string())
 
         print("[INFO] : Emall sent successfully")
-        return jsonify({"message": "Email sent successfully!"}), 200
+        logfire.info("email sent to {sentemail}", sentemail=recipient_email)
+        return jsonify({"message": "Email sent successfully! to", "sent_to":f"{recipient_email}"}), 200
 
     except Exception as e:
         print("[ERROR]: ", e)
+        logfire.error(str(e))
         return jsonify({"error": str(e)}), 500
+        
 
 
 # --- Main Function ---
