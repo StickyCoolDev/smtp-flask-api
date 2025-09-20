@@ -17,11 +17,10 @@ load_dotenv()
 # NOTE : use a good API key in .env
 
 API_KEY: str = os.getenv("API_KEY", "default_unsafe")
-LOGFIRE_KEY:str = os.getenv("LOGFIRE_KEY", "")
+LOGFIRE_KEY: str = os.getenv("LOGFIRE_KEY", "")
 
-
+# configure logfire with your api key
 logfire.configure(token=LOGFIRE_KEY)
-
 
 
 # setup limiter
@@ -43,9 +42,9 @@ def send_email():
     if API_KEY != data.get("key"):
         return jsonify({"error": "Invalid acsses - incorrect api key"}), 401
     try:
-        recipient_email : str = data.get("recipient")
-        subject : str = data.get("subject")
-        body : str = data.get("body")
+        recipient_email: str = data.get("recipient")
+        subject: str = data.get("subject")
+        body: str = data.get("body")
 
         if not all([recipient_email, subject, body]):
             return jsonify({"error": "Missing recipient, subject, or body"}), 400
@@ -55,7 +54,6 @@ def send_email():
         msg["From"] = SENDER_EMAIL
         msg["To"] = recipient_email
         msg["Subject"] = subject
-        
 
         # Attach the body with MIMEText
         msg.attach(MIMEText(body, "plain"))
@@ -70,13 +68,20 @@ def send_email():
 
         print("[INFO] : Emall sent successfully")
         logfire.info("email sent to {sentemail}", sentemail=recipient_email)
-        return jsonify({"message": "Email sent successfully! to", "sent_to":f"{recipient_email}"}), 200
+        return (
+            jsonify(
+                {
+                    "message": "Email sent successfully! to",
+                    "sent_to": f"{recipient_email}",
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         print("[ERROR]: ", e)
         logfire.error(str(e))
         return jsonify({"error": str(e)}), 500
-        
 
 
 # --- Main Function ---
